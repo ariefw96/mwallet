@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: MWALLET-GATEWAY
+
+  cloud:
+    gateway:
+      server :
+        webmvc :
+          routes:
+            - id: user-route
+              uri: lb://MWALLET-USER
+              predicates:
+                - Path=/user/**
+              filters:
+                - StripPrefix=1
+
+            - id: transaction-route
+              uri: lb://MWALLET-TRANSACTION
+              predicates:
+                - Path=/transaction/**
+              filters:
+                - StripPrefix=1
+
+          globalcors:
+            corsConfigurations:
+              '[/**]':
+                allowedOrigins: "*"
+                allowedHeaders: "*"
+                allowedMethods: "*"
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true
