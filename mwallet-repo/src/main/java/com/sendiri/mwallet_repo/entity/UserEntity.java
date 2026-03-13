@@ -1,10 +1,7 @@
 package com.sendiri.mwallet_repo.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -13,14 +10,14 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Table(name = "users")
-@Getter
-@Setter
 @ToString
 @RequiredArgsConstructor
 @Entity
+@Data
 public class UserEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id", unique = true)
     private UUID userId;
 
@@ -42,6 +39,10 @@ public class UserEntity {
 
     @Column(name = "updated_at")
     private Date updatedAt;
+
+    @JsonIgnore
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private WalletEntity wallet;
 
     @Override
     public boolean equals(Object o) {

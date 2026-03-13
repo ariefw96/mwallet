@@ -35,6 +35,7 @@ public class RedisAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
+        System.out.println("path "+path);
 
         // bypass public endpoints
         for (String endpoint : PUBLIC_ENDPOINTS) {
@@ -45,8 +46,10 @@ public class RedisAuthFilter extends OncePerRequestFilter {
         }
 
         String authKey = request.getHeader("auth");
+        System.out.println("authKey "+authKey);
 
         if (authKey == null || authKey.isBlank()) {
+            System.out.println("missing");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing auth header");
             return;
         }
@@ -54,6 +57,7 @@ public class RedisAuthFilter extends OncePerRequestFilter {
         Long ttl = redisUtil.getTtl(authKey);
 
         if (ttl == null || ttl < 60) {
+            System.out.println("token invalid");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired or invalid");
             return;
         }

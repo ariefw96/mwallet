@@ -2,6 +2,33 @@ spring:
   application:
     name: MWALLET-TRANSACTION
 
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mwallet
+    username: postgres
+    password: password
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  data:
+    redis:
+      port: 6379
+      host: localhost
+      timeout: 60000
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: wallet-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+
 server:
   port: 8082
 

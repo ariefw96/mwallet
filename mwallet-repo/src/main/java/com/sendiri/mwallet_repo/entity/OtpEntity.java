@@ -1,9 +1,6 @@
 package com.sendiri.mwallet_repo.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -12,14 +9,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Table(name = "otp")
-@Getter
-@Setter
 @ToString
 @RequiredArgsConstructor
 @Entity
 public class OtpEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "otp_id")
     private UUID otpId;
 
@@ -28,6 +24,62 @@ public class OtpEntity {
 
     @Column(name = "type")
     private String type;
+
+    public UUID getOtpId() {
+        return otpId;
+    }
+
+    public void setOtpId(UUID otpId) {
+        this.otpId = otpId;
+    }
+
+    public String getPhoneNo() {
+        return phoneNo;
+    }
+
+    public void setPhoneNo(String phoneNo) {
+        this.phoneNo = phoneNo;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public Boolean getUsed() {
+        return isUsed;
+    }
+
+    public void setUsed(Boolean used) {
+        isUsed = used;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUsedAt() {
+        return usedAt;
+    }
+
+    public void setUsedAt(Date usedAt) {
+        this.usedAt = usedAt;
+    }
 
     @Column(name = "code")
     private String code;
