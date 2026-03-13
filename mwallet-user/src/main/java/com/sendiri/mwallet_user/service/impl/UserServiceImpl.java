@@ -4,6 +4,7 @@ import com.sendiri.mwallet_repo.constant.GenericConstant;
 import com.sendiri.mwallet_repo.entity.OtpEntity;
 import com.sendiri.mwallet_repo.entity.UserEntity;
 import com.sendiri.mwallet_repo.utils.RandomUtil;
+import com.sendiri.mwallet_repo.utils.RedisUtil;
 import com.sendiri.mwallet_user.repo.OTPRepository;
 import com.sendiri.mwallet_user.repo.UserRepository;
 import com.sendiri.mwallet_user.service.UserService;
@@ -13,8 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -26,6 +29,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private OTPRepository otpRepository;
+
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Override
     public void register(String phoneNo) {
@@ -93,10 +99,19 @@ public class UserServiceImpl implements UserService {
                 log.error("user belum verifikasi");
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mohon verifikasi terlebih dahulu");
             }
-            return user;
+            ObjectMapper mapper = new ObjectMapper();
+            //set ke redis
+            String auth = UUID.randomUUID().toString();
+            redisUtil.set(auth, user, 3600);
+            return Map.of("auth", auth);
         }
         log.error("nomor HP / pin tidak sesuai");
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "USERNAME / PIN TIDAK SESUAI");
+    }
+
+    @Override
+    public Object getProfile(String auth) {
+        return redisUtil.get(auth, UserEntity.class);
     }
 
 

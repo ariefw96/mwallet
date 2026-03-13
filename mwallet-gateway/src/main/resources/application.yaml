@@ -20,13 +20,14 @@ spring:
                 - Path=/transaction/**
               filters:
                 - StripPrefix=1
-
-          globalcors:
-            corsConfigurations:
-              '[/**]':
-                allowedOrigins: "*"
-                allowedHeaders: "*"
-                allowedMethods: "*"
+#
+#          globalcors:
+#            allo
+#            corsConfigurations:
+#              '[/**]':
+#                allowedOrigins: "*"
+#                allowedHeaders: "*"
+#                allowedMethods: "*"
 
 server:
   port: 8080

@@ -6,10 +6,7 @@ import com.sendiri.mwallet_user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/customer")
@@ -20,16 +17,16 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<Object> register(
-           @RequestBody UserRequestDto request
-    ){
+            @RequestBody UserRequestDto request
+    ) {
         userService.register(request.getPhoneNo());
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/verify")
     public ResponseEntity<Object> verify(
-        @RequestBody UserRequestDto request
-    ){
+            @RequestBody UserRequestDto request
+    ) {
         userService.verify(request.getPhoneNo(), request.getOtp(), request.getPin());
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -37,9 +34,16 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<Object> login(
             @RequestBody UserRequestDto request
-    ){
+    ) {
 
         return new ResponseEntity<>(userService.login(request.getPhoneNo(), request.getPin()), HttpStatus.OK);
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<Object> getProfile(
+            @RequestHeader String auth
+    ) {
+        return new ResponseEntity<>(userService.getProfile(auth), HttpStatus.OK);
     }
 
 
