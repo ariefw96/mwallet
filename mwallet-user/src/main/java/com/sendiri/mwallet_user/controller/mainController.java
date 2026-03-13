@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/v1")
+@RequestMapping("/v1/welcome")
 public class mainController {
 
-    @GetMapping("/hello")
+    @GetMapping("")
     public ResponseEntity<Object> hellow(){
         return new ResponseEntity<>("OK SOBAT USER", HttpStatus.OK);
     }

@@ -1,5 +1,6 @@
 package com.sendiri.mwallet_repo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -26,6 +27,7 @@ public class UserEntity {
     @Column(name = "phone_no", length = 13)
     private String phoneNo;
 
+    @JsonIgnore
     @Column(name = "pin")
     private String pin;
 
@@ -36,7 +38,7 @@ public class UserEntity {
     private Boolean isVerified = false;
 
     @Column(name = "created_at")
-    private Date createdAt;
+    private Date createdAt = new Date();
 
     @Column(name = "updated_at")
     private Date updatedAt;
