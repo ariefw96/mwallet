@@ -2,6 +2,16 @@ spring:
   application:
     name: MWALLET-USER
 
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mwallet
+    username: postgres
+    password: password
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
 server:
   port: 8081
 
