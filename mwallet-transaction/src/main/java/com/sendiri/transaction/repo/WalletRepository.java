@@ -5,6 +5,7 @@ import com.sendiri.repo.entity.WalletEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -21,7 +22,7 @@ public interface WalletRepository extends JpaRepository<WalletEntity, UUID> {
     WHERE w.user.userId = :userId
     AND w.balance >= :amount
     """)
-    int debit(UUID userId, BigDecimal amount);
+    int debit(@Param("userId") UUID userId, @Param("amount") BigDecimal amount);
 
     @Modifying
     @Query("""
@@ -29,7 +30,7 @@ public interface WalletRepository extends JpaRepository<WalletEntity, UUID> {
     SET w.balance = w.balance + :amount
     WHERE w.user.userId = :userId
     """)
-    int credit(UUID userId, BigDecimal amount);
+    int credit(@Param("userId") UUID userId, @Param("amount") BigDecimal amount);
 
 
 

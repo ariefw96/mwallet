@@ -1,48 +1,52 @@
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka
-    depends_on:
-      - zookeeper
+    ports:
+      - "9092:9092"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      # 1. Aktifkan Mode KRaft
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+      
+      # 2. Listeners & Protocols
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      
+      # 3. Cluster ID (Wajib Unik untuk KRaft)
+      # Anda bisa menggunakan string random apa saja
+      KAFKA_CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      
+      # 4. Fitur Lainnya
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE}
-    command: >
-      bash -c "
-      /etc/confluent/docker/run &
-      sleep 15 &&
-      /usr/bin/kafka-topics --create --topic wallet.transfer --partitions ${KAFKA_DEFAULT_PARTITIONS} --replication-factor ${KAFKA_DEFAULT_REPLICATION} --bootstrap-server localhost:9092 || true &&
-      /usr/bin/kafka-topics --create --topic wallet.transfer.success --partitions ${KAFKA_DEFAULT_PARTITIONS} --replication-factor ${KAFKA_DEFAULT_REPLICATION} --bootstrap-server localhost:9092 || true &&
-      /usr/bin/kafka-topics --create --topic wallet.transfer.failed --partitions ${KAFKA_DEFAULT_PARTITIONS} --replication-factor ${KAFKA_DEFAULT_REPLICATION} --bootstrap-server localhost:9092 || true &&
-      wait
-      "
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
   redis:
     image: redis:latest
     container_name: redis
-
+  
   mwallet-eureka:
     build:
       context: ./mwallet-eureka
     container_name: mwallet-eureka
     ports:
-      - "${SERVER_PORT_EUREKA}:8761"
+      # Mengubah port luar ke 9761
+      - "9761:8761" 
 
   mwallet-gateway:
     build:
       context: ./mwallet-gateway
     container_name: mwallet-gateway
     ports:
-      - "${SERVER_PORT_GATEWAY}:8080"
+      # Mengubah port luar ke 9080
+      - "9080:8080"
     env_file:
       - .env
     depends_on:
