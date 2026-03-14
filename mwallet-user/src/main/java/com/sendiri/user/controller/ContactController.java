@@ -18,7 +18,7 @@ public class ContactController {
 
     @GetMapping
     public ResponseEntity<Object> getListContact(
-            @RequestHeader String auth
+            @RequestHeader(name = "auth") String auth
     ){
         return new ResponseEntity<>(contactService.getListContact(auth), HttpStatus.OK);
     }

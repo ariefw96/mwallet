@@ -1,0 +1,79 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE}
+    command: >
+      bash -c "
+      /etc/confluent/docker/run &
+      sleep 15 &&
+      /usr/bin/kafka-topics --create --topic wallet.transfer --partitions ${KAFKA_DEFAULT_PARTITIONS} --replication-factor ${KAFKA_DEFAULT_REPLICATION} --bootstrap-server localhost:9092 || true &&
+      /usr/bin/kafka-topics --create --topic wallet.transfer.success --partitions ${KAFKA_DEFAULT_PARTITIONS} --replication-factor ${KAFKA_DEFAULT_REPLICATION} --bootstrap-server localhost:9092 || true &&
+      /usr/bin/kafka-topics --create --topic wallet.transfer.failed --partitions ${KAFKA_DEFAULT_PARTITIONS} --replication-factor ${KAFKA_DEFAULT_REPLICATION} --bootstrap-server localhost:9092 || true &&
+      wait
+      "
+
+  redis:
+    image: redis:latest
+    container_name: redis
+
+  mwallet-eureka:
+    build:
+      context: ./mwallet-eureka
+    container_name: mwallet-eureka
+    ports:
+      - "${SERVER_PORT_EUREKA}:8761"
+
+  mwallet-gateway:
+    build:
+      context: ./mwallet-gateway
+    container_name: mwallet-gateway
+    ports:
+      - "${SERVER_PORT_GATEWAY}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - mwallet-eureka
+
+  mwallet-user:
+    build:
+      context: ./mwallet-user
+    container_name: mwallet-user
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - kafka
+      - redis
+      - mwallet-eureka
+
+  mwallet-transaction:
+    build:
+      context: ./mwallet-transaction
+    container_name: mwallet-transaction
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - kafka
+      - redis
+      - mwallet-eureka
+
+networks:
+  default:
+    name: microservices-network

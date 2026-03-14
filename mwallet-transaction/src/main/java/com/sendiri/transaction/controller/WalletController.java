@@ -16,21 +16,21 @@ public class WalletController {
 
     @GetMapping("/balance")
     public ResponseEntity<Object> getBalance(
-            @RequestHeader String auth
+            @RequestHeader(name = "auth") String auth
     ) {
         return new ResponseEntity<>(walletService.getBalanceUser(auth), HttpStatus.OK);
     }
 
     @PostMapping("/topup")
     public ResponseEntity<Object> topupBalance(
-            @RequestHeader String auth
+            @RequestHeader(name = "auth") String auth
     ) {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/tranfer")
     public ResponseEntity<Object> tranfer(
-            @RequestHeader String auth,
+            @RequestHeader(name = "auth") String auth,
             @RequestBody TranferWalletRequestDto request
     ) {
         return new ResponseEntity<>(walletService.tranferBalance(auth, request), HttpStatus.OK);
@@ -38,7 +38,7 @@ public class WalletController {
 
     @GetMapping("/history")
     public ResponseEntity<Object> history(
-            @RequestHeader String auth
+            @RequestHeader(name = "auth") String auth
     ) {
         return new ResponseEntity<>(walletService.listHistory(auth), HttpStatus.OK);
     }

@@ -41,7 +41,7 @@ public class UserController {
 
     @GetMapping("/profile")
     public ResponseEntity<Object> getProfile(
-            @RequestHeader String auth
+            @RequestHeader(name = "auth") String auth
     ) {
         return new ResponseEntity<>(userService.getProfile(auth), HttpStatus.OK);
     }

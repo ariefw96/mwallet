@@ -6,13 +6,8 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@EntityScan(basePackages = {
-        "com.sendiri.mwallet_repo.entity"
-})
-@ComponentScan(basePackages = {
-        "com.sendiri.mwallet_repo",
-        "com.sendiri.mwallet_user"
-})
+@ComponentScan(basePackages = {"com.sendiri.user", "com.sendiri.repo"})
+@EntityScan(basePackages = "com.sendiri.repo.entity")
 public class MwalletUserApplication {
 
     public static void main(String[] args) {
