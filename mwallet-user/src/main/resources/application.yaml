@@ -3,19 +3,19 @@ spring:
     name: MWALLET-USER
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/mwallet
-    username: postgres
-    password: password
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mwallet}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
 
   data:
     redis:
-      port: 6379
-      host: localhost
+      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST:localhost}
       timeout: 60000
 
 server:

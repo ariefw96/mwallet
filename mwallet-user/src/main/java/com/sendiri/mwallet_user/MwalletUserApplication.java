@@ -9,15 +9,16 @@ import org.springframework.stereotype.Component;
 
 @SpringBootApplication
 @EntityScan(basePackages = {
-		"com.sendiri.mwallet_repo.entity"
+        "com.sendiri.mwallet_repo.entity"
 })
 @ComponentScan(basePackages = {
-		"com.sendiri.mwallet_repo", "com.sendiri.mwallet_user"
+        "com.sendiri.mwallet_repo",
+        "com.sendiri.mwallet_user"
 })
 public class MwalletUserApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MwalletUserApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MwalletUserApplication.class, args);
+    }
 
 }

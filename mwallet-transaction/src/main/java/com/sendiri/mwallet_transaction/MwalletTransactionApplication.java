@@ -9,16 +9,17 @@ import org.springframework.kafka.annotation.EnableKafka;
 
 @SpringBootApplication
 @EntityScan(basePackages = {
-		"com.sendiri.mwallet_repo.entity"
+        "com.sendiri.mwallet_repo.entity"
 })
 @ComponentScan(basePackages = {
-		"com.sendiri.mwallet_repo", "com.sendiri.mwallet_transaction"
+        "com.sendiri.mwallet_repo",
+        "com.sendiri.mwallet_transaction"
 })
 @EnableKafka
 public class MwalletTransactionApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MwalletTransactionApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MwalletTransactionApplication.class, args);
+    }
 
 }

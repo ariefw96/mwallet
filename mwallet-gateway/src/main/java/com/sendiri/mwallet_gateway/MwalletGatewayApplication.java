@@ -7,12 +7,13 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @ComponentScan(basePackages = {
-		"com.sendiri.mwallet_gateway", "com.sendiri.mwallet_repo"
+        "com.sendiri.mwallet_gateway",
+        "com.sendiri.mwallet_repo"
 })
 public class MwalletGatewayApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MwalletGatewayApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MwalletGatewayApplication.class, args);
+    }
 
 }
