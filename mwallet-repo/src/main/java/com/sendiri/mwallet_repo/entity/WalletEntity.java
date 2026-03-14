@@ -6,6 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@Getter
 @Entity
 @Table(name = "wallets")
 @RequiredArgsConstructor
@@ -20,24 +21,12 @@ public class WalletEntity {
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private UserEntity user;
 
-    public UUID getWalletId() {
-        return walletId;
-    }
-
     public void setWalletId(UUID walletId) {
         this.walletId = walletId;
     }
 
-    public UserEntity getUser() {
-        return user;
-    }
-
     public void setUser(UserEntity user) {
         this.user = user;
-    }
-
-    public BigDecimal getBalance() {
-        return balance;
     }
 
     public void setBalance(BigDecimal balance) {

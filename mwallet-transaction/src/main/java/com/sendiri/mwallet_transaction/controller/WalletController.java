@@ -30,9 +30,17 @@ public class WalletController {
 
     @PostMapping("/tranfer")
     public ResponseEntity<Object> tranfer(
+            @RequestHeader String auth,
             @RequestBody TranferWalletRequestDto request
     ) {
-        return new ResponseEntity<>(walletService.tranferBalance(request), HttpStatus.OK);
+        return new ResponseEntity<>(walletService.tranferBalance(auth, request), HttpStatus.OK);
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<Object> history(
+            @RequestHeader String auth
+    ) {
+        return new ResponseEntity<>(walletService.listHistory(auth), HttpStatus.OK);
     }
 
 

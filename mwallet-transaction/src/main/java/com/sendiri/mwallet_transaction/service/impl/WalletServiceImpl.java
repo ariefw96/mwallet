@@ -1,23 +1,33 @@
 package com.sendiri.mwallet_transaction.service.impl;
 
 import com.sendiri.mwallet_repo.constant.GenericConstant;
+import com.sendiri.mwallet_repo.constant.TransferStatus;
 import com.sendiri.mwallet_repo.dto.request.TranferWalletRequestDto;
 import com.sendiri.mwallet_repo.entity.UserEntity;
 import com.sendiri.mwallet_repo.entity.WalletEntity;
+import com.sendiri.mwallet_repo.entity.WalletHistoryEntity;
+import com.sendiri.mwallet_repo.entity.WalletTrxEntity;
 import com.sendiri.mwallet_repo.utils.RedisUtil;
 import com.sendiri.mwallet_transaction.kafka.KafkaProducerService;
+import com.sendiri.mwallet_transaction.repo.UserRepository;
+import com.sendiri.mwallet_transaction.repo.WalletHistoryRepository;
 import com.sendiri.mwallet_transaction.repo.WalletRepository;
+import com.sendiri.mwallet_transaction.repo.WalletTrxRepository;
 import com.sendiri.mwallet_transaction.service.WalletService;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Transactional()
 @Service
 public class WalletServiceImpl implements WalletService {
 
@@ -29,6 +39,13 @@ public class WalletServiceImpl implements WalletService {
 
     @Autowired
     private KafkaProducerService kafkaProducerService;
+
+    @Autowired
+    private WalletTrxRepository walletTrxRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private WalletHistoryRepository walletHistoryRepository;
 
     @Override
     public Object getBalanceUser(String auth) {
@@ -51,11 +68,41 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public Object tranferBalance(TranferWalletRequestDto request) {
+    public Object tranferBalance(String auth, TranferWalletRequestDto request) {
+
+        UserEntity from = redisUtil.get(auth, UserEntity.class);
+        UserEntity to = userRepository.findById(request.getToUser())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Akun tidak ditemukan"));
+
+        if(from.getUserId().equals(to.getUserId())){
+            System.out.println("tidak dapat tranfer ke wallet sendiri!");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "TIDAK DAPAT TRANSFER KE WALLET SENDIRI!!");
+        }
+
+
         ObjectMapper mapper = new ObjectMapper();
-        UUID trxId = UUID.randomUUID();
-        request.setTrxId(trxId);
-        kafkaProducerService.sendMessage(GenericConstant.KAFKA_TOPIC, mapper.writeValueAsString(request));
-        return Map.of("trxId", trxId);
+        WalletTrxEntity walletTrx = new WalletTrxEntity();
+        walletTrx.setWalletTrxId(UUID.randomUUID());
+        walletTrx.setFromUser(from.getUserId());
+        walletTrx.setToUser(to.getUserId());
+        walletTrx.setBalance(request.getBalance());;
+        walletTrxRepository.save(walletTrx);
+
+        request.setFromUser(from.getUserId());
+        request.setTrxId(walletTrx.getWalletTrxId());
+
+        kafkaProducerService.sendMessage(GenericConstant.KAFKA_TOPIC_WALLET_PENDING, mapper.writeValueAsString(request));
+
+        return Map.of("trxId", walletTrx.getWalletTrxId(), "status", TransferStatus.PENDING);
+    }
+
+    @Override
+    public Object listHistory(String auth) {
+        val usr = redisUtil.get(auth, UserEntity.class);
+
+        return walletHistoryRepository.findAllByWallet(
+                walletRepository.findByUser(usr).orElse(null)
+        );
+
     }
 }

@@ -9,6 +9,7 @@ WalletService {
 
     public Object getBalanceUser(String auth);
     public Object topupBalance(String auth, BigDecimal balance);
-    public Object tranferBalance(TranferWalletRequestDto request);
+    public Object tranferBalance(String auth, TranferWalletRequestDto request);
+    public Object listHistory(String auth);
 
 }
