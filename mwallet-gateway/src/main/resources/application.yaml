@@ -1,6 +1,11 @@
 spring:
   application:
     name: MWALLET-GATEWAY
+  data:
+    redis:
+      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST:localhost}
+      timeout: 60000
 
   cloud:
     gateway:

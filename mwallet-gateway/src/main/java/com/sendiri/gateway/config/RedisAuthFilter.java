@@ -5,20 +5,18 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class RedisAuthFilter extends OncePerRequestFilter {
 
-    private final RedisUtil redisUtil;
-
-    public RedisAuthFilter(RedisUtil redisUtil) {
-        this.redisUtil = redisUtil;
-    }
+    private final RedisTemplate<String, Object> redisTemplate;
 
     private static final List<String> PUBLIC_ENDPOINTS = List.of(
             "/login",
@@ -27,6 +25,10 @@ public class RedisAuthFilter extends OncePerRequestFilter {
             "/swagger-ui",
             "/v3/api-docs"
     );
+
+    public RedisAuthFilter(RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -54,7 +56,7 @@ public class RedisAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        Long ttl = redisUtil.getTtl(authKey);
+        Long ttl = redisTemplate.getExpire(authKey, TimeUnit.SECONDS);
 
         if (ttl == null || ttl < 60) {
             System.out.println("token invalid");

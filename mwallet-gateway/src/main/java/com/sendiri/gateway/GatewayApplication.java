@@ -6,14 +6,10 @@ import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
-@ComponentScan(basePackages = {
-        "com.sendiri.mwallet_gateway",
-        "com.sendiri.mwallet_repo"
-})
-public class MwalletGatewayApplication {
+public class GatewayApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(MwalletGatewayApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(GatewayApplication.class, args);
+	}
 
 }
