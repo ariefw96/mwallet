@@ -42,7 +42,7 @@ public class WalletController {
         return new ResponseEntity<>(walletAnalyticService.history(auth, searchPaging), HttpStatus.OK);
     }
 
-    @GetMapping("/monthly")
+    @GetMapping("/recap-data")
     public ResponseEntity<Object> lastMonth(
             @RequestHeader(name = "auth") String auth,
             @RequestParam(name = "day") String day

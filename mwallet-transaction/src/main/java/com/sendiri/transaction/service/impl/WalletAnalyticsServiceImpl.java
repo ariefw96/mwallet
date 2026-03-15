@@ -35,23 +35,26 @@ public class WalletAnalyticsServiceImpl implements WalletAnalyticService {
     private RedisUtil redisUtil;
 
     @Override
-    public Map<String, Object> getMonthlyStats(String auth, String key) {
+    public Map<String, Object> getMonthlyStats(String auth, String day) {
 
         val usr = redisUtil.get(auth, UserEntity.class);
 
         Map<String, Integer> daymap = Map.of("1d", 1, "7d", 7, "30d", 30);
-        if(daymap.get(key) == null){
+        Integer calDay = daymap.get(day);
+        if(calDay == null){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid");
         }
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_MONTH, -daymap.get(key));
-        Date thirtyDaysAgo = cal.getTime();
+        cal.add(Calendar.DAY_OF_MONTH, (-calDay));
+        Date svrDaysAgo = cal.getTime();
+
+        log.info("day(s) behind {}", svrDaysAgo);
 
         List<WalletHistoryDoc> outList = searchRepository
-                .findByWalletTransactionFromUserPhoneNoAndWalletTransactionTransactionDateAfter(usr.getPhoneNo(), thirtyDaysAgo);
+                .findByWalletTransactionFromUserPhoneNoAndWalletTransactionTransactionDateAfter(usr.getPhoneNo(), svrDaysAgo);
 
         List<WalletHistoryDoc> inList = searchRepository
-                .findByWalletTransactionToUserPhoneNoAndWalletTransactionTransactionDateAfter(usr.getPhoneNo(), thirtyDaysAgo);
+                .findByWalletTransactionToUserPhoneNoAndWalletTransactionTransactionDateAfter(usr.getPhoneNo(), svrDaysAgo);
 
         BigDecimal totalOut = outList.stream()
                 .map(doc -> doc.getWalletTransaction().getBalance())
@@ -63,7 +66,7 @@ public class WalletAnalyticsServiceImpl implements WalletAnalyticService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("phoneNo", usr.getPhoneNo());
-        result.put("period", "Last "+daymap.get("key")+(" day(s)"));
+        result.put("period", "Last ".concat(String.valueOf(calDay)).concat(" day(s)"));
 
         result.put("pengeluaran", Map.of(
                 "total", totalOut,
