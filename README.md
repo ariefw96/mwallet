@@ -13,6 +13,7 @@ Sebelum memulai, pastikan perangkat kamu sudah terinstall:
 - Docker Desktop (dengan WSL2 backend untuk Windows atau Docker Engine untuk Linux)
 
 - IntelliJ IDEA (Rekomendasi IDE)
+- PostgreSQL local atau online service
 
 ## Instalasi
 
@@ -42,6 +43,7 @@ mvn clean install -DskipTests=true
 ## Deployment
 Project ini sudah dilengkapi redis, kafka, dan elasticsearch yang sudah ada pada docker-compose.yml
 notes : untuk database (PostgreSQL) sengaja dibuat terpisah 
+Sebelumnya, set dahulu value ke .env, untuk formatnya bisa dilihat di .env.example
 Jalankan command berikut untuk menjalankan docker compose
 ```
 docker compose up -d --build
