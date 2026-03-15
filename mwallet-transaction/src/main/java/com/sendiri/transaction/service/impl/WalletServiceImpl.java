@@ -2,6 +2,7 @@ package com.sendiri.transaction.service.impl;
 
 import com.sendiri.repo.constant.GenericConstant;
 import com.sendiri.repo.constant.TransferStatus;
+import com.sendiri.repo.dto.request.TopupWalletDto;
 import com.sendiri.repo.dto.request.TranferWalletRequestDto;
 import com.sendiri.repo.entity.UserEntity;
 import com.sendiri.repo.entity.WalletEntity;
@@ -40,10 +41,12 @@ public class WalletServiceImpl implements WalletService {
 
     @Autowired
     private WalletTrxRepository walletTrxRepository;
+
     @Autowired
     private UserRepository userRepository;
+
     @Autowired
-    private WalletHistoryRepository walletHistoryRepository;
+    private ObjectMapper mapper;
 
     @Override
     public Object getBalanceUser(String auth) {
@@ -56,13 +59,25 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public Object topupBalance(String auth, BigDecimal balance) {
-        UserEntity user = redisUtil.get(auth, UserEntity.class);
-        WalletEntity wallet = walletRepository.findByUser(user).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wallet tidak ditemukan")
+    public Object topupBalance(TopupWalletDto request) {
+        UUID trxId = UUID.randomUUID();
+        UserEntity usr = userRepository.findByPhoneNo(request.getPhoneNo())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wallet tidak ditemukan!"));
+        walletRepository.findByUser(usr).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wallet tidak ditemukan!")
         );
-        wallet.setBalance(wallet.getBalance().add(balance));
-        return Map.of("balance", wallet.getBalance());
+
+        WalletTrxEntity wtrx = new WalletTrxEntity();
+        wtrx.setWalletTrxId(trxId);
+        wtrx.setFromUser(null);
+        wtrx.setBalance(request.getBalance());
+        wtrx.setToUser(usr.getUserId());
+        walletTrxRepository.save(wtrx);
+
+        request.setTrxId(String.valueOf(wtrx.getWalletTrxId()));
+
+        kafkaProducerService.sendMessage(GenericConstant.KAFKA_TOPIC_WALLET_TOPUP, mapper.writeValueAsString(request));
+        return Map.of("message","Mohon menunggu saldo masuk.");
     }
 
     @Override
@@ -77,13 +92,11 @@ public class WalletServiceImpl implements WalletService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "TIDAK DAPAT TRANSFER KE WALLET SENDIRI!!");
         }
 
-
-        ObjectMapper mapper = new ObjectMapper();
         WalletTrxEntity walletTrx = new WalletTrxEntity();
         walletTrx.setWalletTrxId(UUID.randomUUID());
         walletTrx.setFromUser(from.getUserId());
         walletTrx.setToUser(to.getUserId());
-        walletTrx.setBalance(request.getBalance());;
+        walletTrx.setBalance(request.getBalance());
         walletTrxRepository.save(walletTrx);
 
         request.setFromUser(from.getUserId());
@@ -94,13 +107,4 @@ public class WalletServiceImpl implements WalletService {
         return Map.of("trxId", walletTrx.getWalletTrxId(), "status", TransferStatus.PENDING);
     }
 
-    @Override
-    public Object listHistory(String auth) {
-        val usr = redisUtil.get(auth, UserEntity.class);
-
-        return walletHistoryRepository.findAllByWallet(
-                walletRepository.findByUser(usr).orElse(null)
-        );
-
-    }
 }

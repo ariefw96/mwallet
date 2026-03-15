@@ -1,5 +1,6 @@
 package com.sendiri.repo.dto.request;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.math.BigDecimal;

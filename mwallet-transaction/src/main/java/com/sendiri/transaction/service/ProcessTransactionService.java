@@ -2,8 +2,11 @@ package com.sendiri.transaction.service;
 
 import com.sendiri.repo.constant.GenericConstant;
 import com.sendiri.repo.constant.TransferStatus;
+import com.sendiri.repo.dto.request.TopupWalletDto;
 import com.sendiri.repo.dto.request.TranferWalletRequestDto;
+import com.sendiri.repo.dto.request.TransferEvent;
 import com.sendiri.repo.entity.UserEntity;
+import com.sendiri.repo.entity.WalletEntity;
 import com.sendiri.repo.entity.WalletHistoryEntity;
 import com.sendiri.repo.entity.WalletTrxEntity;
 import com.sendiri.transaction.controller.SSEController;
@@ -14,9 +17,10 @@ import com.sendiri.transaction.repo.WalletRepository;
 import com.sendiri.transaction.repo.WalletTrxRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.Date;
 import java.util.UUID;
@@ -37,13 +41,13 @@ public class ProcessTransactionService {
     private UserRepository userRepository;
 
     @Autowired
-    private KafkaProducerService kafkaProducerService;
-
-    @Autowired
     private SSEController sseController;
 
     @Autowired
-    private ObjectMapper mapper;
+    private ApplicationEventPublisher eventPublisher;
+
+    @Value("${event.sse.delay:10000}")
+    private Long sseDelay;
 
     @Transactional
     public void processTransfer(TranferWalletRequestDto request) {
@@ -51,30 +55,36 @@ public class ProcessTransactionService {
         int debit = walletRepository.debit(request.getFromUser(), request.getBalance());
 
         if (debit == 0) {
-            kafkaProducerService.sendMessage(GenericConstant.KAFKA_TOPIC_WALLET_FAILED, mapper.writeValueAsString(request));
+            eventPublisher.publishEvent(new TransferEvent(request, Boolean.FALSE));
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return;
         }
 
         walletRepository.credit(request.getToUser(), request.getBalance());
-        kafkaProducerService.sendMessage(GenericConstant.KAFKA_TOPIC_WALLET_SUCCESS, mapper.writeValueAsString(request));
+        eventPublisher.publishEvent(new TransferEvent(request, Boolean.TRUE));
+
     }
 
     @Transactional
     public void successTransfer(TranferWalletRequestDto request) {
-        UserEntity userOut = userRepository.findById(request.getFromUser()).orElse(null);
+        UserEntity userOut = null;
+        if(request.getFromUser() != null){
+            userOut = userRepository.findById(request.getFromUser()).orElse(null);
+        }
         UserEntity userIn = userRepository.findById(request.getToUser()).orElse(null);
-        if (userIn == null || userOut == null) {
+        if (userIn == null) {
             return;
         }
-        WalletHistoryEntity outHistory = new WalletHistoryEntity();
-        outHistory.setWallet(userOut.getWallet());
-        outHistory.setType(GenericConstant.OUT);
-        outHistory.setBalance(request.getBalance());
-        outHistory.setTrxId(request.getTrxId().toString());
-        outHistory.setCreatedAt(new Date());
+        if(userOut != null){
+            WalletHistoryEntity outHistory = new WalletHistoryEntity();
+            outHistory.setWallet(userOut.getWallet());
+            outHistory.setType(GenericConstant.OUT);
+            outHistory.setBalance(request.getBalance());
+            outHistory.setTrxId(request.getTrxId().toString());
+            outHistory.setCreatedAt(new Date());
 
-        walletHistoryRepository.save(outHistory);
+            walletHistoryRepository.save(outHistory);
+        }
 
         WalletHistoryEntity inHistory = new WalletHistoryEntity();
         inHistory.setWallet(userIn.getWallet());
@@ -106,11 +116,33 @@ public class ProcessTransactionService {
         walletTrxRepository.save(trx);
 
         try{
-            Thread.sleep(10000); //10s delay for testing
+            Thread.sleep(this.sseDelay); //for testing, changed in app yaml
             sendSSE(trx);
         }catch (InterruptedException ie){
             System.out.print("thread interupted");
         }
+
+    }
+
+    @Transactional
+    public void topupBalance(TopupWalletDto req){
+        UserEntity usr = userRepository.findByPhoneNo(req.getPhoneNo()).orElse(null);
+        if(usr == null){
+            return;
+        }
+        WalletEntity wl = walletRepository.findByUser(usr).orElse(null);
+        if(wl == null){
+            return;
+        }
+        wl.setBalance(wl.getBalance().add(req.getBalance()));
+        walletRepository.save(wl);
+
+        TranferWalletRequestDto tf = new TranferWalletRequestDto();
+        tf.setTrxId(UUID.fromString(req.getTrxId()));
+        tf.setBalance(req.getBalance());
+        tf.setToUser(usr.getUserId());
+
+        eventPublisher.publishEvent(new TransferEvent(tf, Boolean.TRUE));
 
     }
 

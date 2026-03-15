@@ -11,18 +11,23 @@ import com.sendiri.user.repo.UserRepository;
 import com.sendiri.user.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
 @Slf4j
+@Transactional
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -33,6 +38,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private RedisUtil redisUtil;
+
+    @Value("${otp.expiredIn:30000}")
+    private Long otpExpiredIn;
 
     @Override
     public void register(String phoneNo) {
@@ -56,6 +64,9 @@ public class UserServiceImpl implements UserService {
         var otpEntity = otpRepository.findFirstByPhoneNoAndIsUsedOrderByCreatedAtDesc(phoneNo, false).orElse(null);
         if(otpEntity != null){
             if(otpEntity.getCode().equals(otp)){
+                if(checkExpiredOtp(otpEntity.getCreatedAt())){
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OTP Expired!!");
+                }
                 otpEntity.setUsed(true);
                 otpEntity.setUsedAt(new Date());
                 otpRepository.save(otpEntity);
@@ -124,5 +135,14 @@ public class UserServiceImpl implements UserService {
 //        log.info("raw PIN :: {}", pin);
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         return encoder.encode(pin);
+    }
+
+    public boolean checkExpiredOtp(Date date) {
+        Instant now = Instant.now();
+        Instant then = date.toInstant();
+
+        long diffInMs = Duration.between(then, now).toMillis();
+
+        return diffInMs > this.otpExpiredIn;
     }
 }

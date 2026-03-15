@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/v1/customer")
 public class UserController {
@@ -20,7 +22,7 @@ public class UserController {
             @RequestBody UserRequestDto request
     ) {
         userService.register(request.getPhoneNo());
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return new ResponseEntity<>(Map.of("message", "Kode OTP telah dikirim ke "+request.getPhoneNo()),HttpStatus.CREATED);
     }
 
     @PostMapping("/verify")
@@ -28,7 +30,7 @@ public class UserController {
             @RequestBody UserRequestDto request
     ) {
         userService.verify(request.getPhoneNo(), request.getOtp(), request.getPin());
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(Map.of("message", "Login berhasil"), HttpStatus.OK);
     }
 
     @PostMapping("/login")

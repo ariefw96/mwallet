@@ -1,6 +1,8 @@
 package com.sendiri.transaction.kafka;
 
+import com.sendiri.repo.dto.request.TopupWalletDto;
 import com.sendiri.repo.dto.request.TranferWalletRequestDto;
+import com.sendiri.transaction.elastic.ElasticService;
 import com.sendiri.transaction.service.ProcessTransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -12,6 +14,9 @@ public class KafkaConsumerService {
 
     @Autowired
     private ProcessTransactionService processTransactionService;
+
+    @Autowired
+    private ElasticService elasticService;
 
     @Autowired
     private ObjectMapper mapper;
@@ -38,6 +43,21 @@ public class KafkaConsumerService {
         var val = mapper.readValue(message, TranferWalletRequestDto.class);
         processTransactionService.failedTranfer(val);
     }
+
+    @KafkaListener(topics = "wallet.transfer.success.elastic", groupId = "wallet-group")
+    public void saveToElasticAfterSuccess(String message){
+        System.out.println("Received message [incoming elastic save]: " + message);
+        var val = mapper.readValue(message, TranferWalletRequestDto.class);
+        elasticService.saveHistoryToElastic(val);
+    }
+
+    @KafkaListener(topics = "wallet.topup", groupId = "wallet-group")
+    public void topupBalance(String message){
+        System.out.println("Received message [topup]: " + message);
+        var val = mapper.readValue(message, TopupWalletDto.class);
+        processTransactionService.topupBalance(val);
+    }
+
 
 
 }

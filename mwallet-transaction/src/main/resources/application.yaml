@@ -18,8 +18,12 @@ spring:
       host: ${REDIS_HOST:localhost}
       timeout: 60000
 
+    elasticsearch:
+      repositories:
+        enabled: true
+
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -28,6 +32,12 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
+
+  elasticsearch:
+    uris: ${ELASTIC_SERVER:http://localhost:9200}
+    socket-timeout: 30s
+    connection-timeout: 5s
+
 
 server:
   port: 8082
@@ -38,3 +48,7 @@ eureka:
       defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761/eureka}
     fetch-registry: true
     register-with-eureka: true
+
+event :
+  sse :
+    delay : 100000
