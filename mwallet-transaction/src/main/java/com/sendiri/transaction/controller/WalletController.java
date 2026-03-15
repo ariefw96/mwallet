@@ -44,9 +44,10 @@ public class WalletController {
 
     @GetMapping("/monthly")
     public ResponseEntity<Object> lastMonth(
-            @RequestHeader(name = "auth") String auth
+            @RequestHeader(name = "auth") String auth,
+            @RequestParam(name = "day") String day
     ){
-        return new ResponseEntity<>(walletAnalyticService.getMonthlyStats(auth), HttpStatus.OK);
+        return new ResponseEntity<>(walletAnalyticService.getMonthlyStats(auth, day), HttpStatus.OK);
     }
 
 

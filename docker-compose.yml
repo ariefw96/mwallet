@@ -1,43 +1,77 @@
+version: '3.8'
+
 services:
+  # --- INFRASTRUCTURE: SEARCH ENGINE ---
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.5
+    container_name: elastic-local
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data_925:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- INFRASTRUCTURE: MESSAGE BROKER ---
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka
     ports:
       - "9092:9092"
     environment:
-      # 1. Aktifkan Mode KRaft
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: 'broker,controller'
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
-      
-      # 2. Listeners & Protocols
       KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      
-      # 3. Cluster ID (Wajib Unik untuk KRaft)
-      # Anda bisa menggunakan string random apa saja
       KAFKA_CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
-      
-      # 4. Fitur Lainnya
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      # Mengecek apakah broker Kafka siap merespon request
+      test: ["CMD-SHELL", "kafka-cluster cluster-id --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
+  # --- INFRASTRUCTURE: CACHE ---
   redis:
     image: redis:latest
     container_name: redis
-  
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- MICROSERVICES: DISCOVERY & GATEWAY ---
   mwallet-eureka:
     build:
       context: ./mwallet-eureka
     container_name: mwallet-eureka
     ports:
-      # Mengubah port luar ke 9761
       - "9761:8761" 
 
   mwallet-gateway:
@@ -45,13 +79,13 @@ services:
       context: ./mwallet-gateway
     container_name: mwallet-gateway
     ports:
-      # Mengubah port luar ke 9080
       - "9080:8080"
     env_file:
       - .env
     depends_on:
       - mwallet-eureka
 
+  # --- MICROSERVICES: CORE ---
   mwallet-user:
     build:
       context: ./mwallet-user
@@ -61,9 +95,12 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - kafka
-      - redis
-      - mwallet-eureka
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mwallet-eureka:
+        condition: service_started
 
   mwallet-transaction:
     build:
@@ -74,10 +111,21 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - kafka
-      - redis
-      - mwallet-eureka
+      kafka:
+        condition: service_healthy  # Sekarang menunggu Kafka benar-benar siap
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy  # Menunggu Elastic benar-benar siap
+      mwallet-eureka:
+        condition: service_started
 
 networks:
   default:
     name: microservices-network
+
+volumes:
+  es_data_925:
+    driver: local
+  redis_data:
+    driver: local

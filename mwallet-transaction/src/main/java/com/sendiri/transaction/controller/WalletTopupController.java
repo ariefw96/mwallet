@@ -1,7 +1,6 @@
 package com.sendiri.transaction.controller;
 
 import com.sendiri.repo.dto.request.TopupWalletDto;
-import com.sendiri.repo.dto.request.TranferWalletRequestDto;
 import com.sendiri.transaction.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

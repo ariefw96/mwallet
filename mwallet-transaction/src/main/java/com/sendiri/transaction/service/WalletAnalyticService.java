@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface WalletAnalyticService {
 
-    public Map<String, Object> getMonthlyStats(String auth);
+    public Map<String, Object> getMonthlyStats(String auth, String dayMap);
 
     public Map<String, Object> history(String auth, SearchPagingDto search);
 }

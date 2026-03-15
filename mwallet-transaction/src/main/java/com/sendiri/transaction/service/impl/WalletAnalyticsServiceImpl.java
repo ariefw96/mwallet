@@ -13,7 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -33,23 +35,24 @@ public class WalletAnalyticsServiceImpl implements WalletAnalyticService {
     private RedisUtil redisUtil;
 
     @Override
-    public Map<String, Object> getMonthlyStats(String auth) {
+    public Map<String, Object> getMonthlyStats(String auth, String key) {
 
         val usr = redisUtil.get(auth, UserEntity.class);
 
+        Map<String, Integer> daymap = Map.of("1d", 1, "7d", 7, "30d", 30);
+        if(daymap.get(key) == null){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid");
+        }
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_MONTH, -30);
+        cal.add(Calendar.DAY_OF_MONTH, -daymap.get(key));
         Date thirtyDaysAgo = cal.getTime();
 
-        // 1. Ambil List (Menggunakan Repository agar simpel)
         List<WalletHistoryDoc> outList = searchRepository
                 .findByWalletTransactionFromUserPhoneNoAndWalletTransactionTransactionDateAfter(usr.getPhoneNo(), thirtyDaysAgo);
 
         List<WalletHistoryDoc> inList = searchRepository
                 .findByWalletTransactionToUserPhoneNoAndWalletTransactionTransactionDateAfter(usr.getPhoneNo(), thirtyDaysAgo);
 
-        // 2. Hitung Sum menggunakan Stream (untuk data skala menengah)
-        // Jika data jutaan, gunakan Native Query Aggregation
         BigDecimal totalOut = outList.stream()
                 .map(doc -> doc.getWalletTransaction().getBalance())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -58,10 +61,9 @@ public class WalletAnalyticsServiceImpl implements WalletAnalyticService {
                 .map(doc -> doc.getWalletTransaction().getBalance())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 3. Response Map
         Map<String, Object> result = new HashMap<>();
         result.put("phoneNo", usr.getPhoneNo());
-        result.put("period", "Last 30 Days");
+        result.put("period", "Last "+daymap.get("key")+(" day(s)"));
 
         result.put("pengeluaran", Map.of(
                 "total", totalOut,
@@ -88,11 +90,11 @@ public class WalletAnalyticsServiceImpl implements WalletAnalyticService {
                 Sort.by(Sort.Direction.DESC, "walletTransaction.transactionDate")
         );
 
-//        Page<WalletHistoryDoc> elasticPage = searchRepository
-//                .findByWalletTransactionFromUserPhoneNoOrWalletTransactionToUserPhoneNo(
-//                        phoneNo, phoneNo, pageable);
+        Page<WalletHistoryDoc> elasticPage = searchRepository
+                .findByWalletTransactionFromUserPhoneNoOrWalletTransactionToUserPhoneNo(
+                        phoneNo, phoneNo, pageable);
 
-        Page<WalletHistoryDoc> elasticPage = searchRepository.findAll(pageable);
+//        Page<WalletHistoryDoc> elasticPage = searchRepository.findAll(pageable);
 
         List<Map<String, Object>> historyList = elasticPage.getContent().stream().map(doc -> {
             var trx = doc.getWalletTransaction();
