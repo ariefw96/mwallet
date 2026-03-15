@@ -50,14 +50,20 @@ Jalankan command berikut untuk menjalankan docker compose
 ```
 docker compose up -d --build
 ```
-tunggu sampai semua startup selesai, kita bisa cek apakah service sudah berjalan dengan syntax
+tunggu sampai semua startup selesai, 
+<img width="1105" height="626" alt="Image" src="https://github.com/user-attachments/assets/bde7f81f-4764-4f19-b055-3ad8d5a31a40" />
+kita bisa cek apakah service sudah berjalan dengan syntax
 ```
 docker ps
 ```
+<img width="1914" height="236" alt="Image" src="https://github.com/user-attachments/assets/39ed50d3-9b73-4ad5-b10e-53ea0d2cb631" />
 Setelah semuanya berjalan, kamu bisa cek ketiga service tersebut (hanya eureka, gateway, dan elasticSearch yang di expose keluar)
 - Eureka Server	http://localhost:9761	Service Discovery Dashboard
 - API Gateway	http://localhost:9080	Entry point untuk semua API
 - Elasticsearch	http://localhost:9200	Search Engine Node
+
+<img width="1911" height="988" alt="Image" src="https://github.com/user-attachments/assets/4e5b730b-c055-4682-9a78-e99c03db1938" />
+<img width="966" height="535" alt="Image" src="https://github.com/user-attachments/assets/a5e8f22f-29c9-4b21-a991-8724c328fde6" />
 
 note : jika elastic gagal berjalan khususnya pada platform windows pastikan memory virtual WSL sudah diatur dengan syntax 
 ```
