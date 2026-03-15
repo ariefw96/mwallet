@@ -77,7 +77,7 @@ public class WalletServiceImpl implements WalletService {
         request.setTrxId(String.valueOf(wtrx.getWalletTrxId()));
 
         kafkaProducerService.sendMessage(GenericConstant.KAFKA_TOPIC_WALLET_TOPUP, mapper.writeValueAsString(request));
-        return Map.of("message","Mohon menunggu saldo masuk.");
+        return Map.of("message","Mohon menunggu saldo masuk.", "trxId",trxId);
     }
 
     @Override
