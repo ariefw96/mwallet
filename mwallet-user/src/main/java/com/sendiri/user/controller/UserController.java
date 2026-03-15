@@ -30,7 +30,7 @@ public class UserController {
             @RequestBody UserRequestDto request
     ) {
         userService.verify(request.getPhoneNo(), request.getOtp(), request.getPin());
-        return new ResponseEntity<>(Map.of("message", "Login berhasil"), HttpStatus.OK);
+        return new ResponseEntity<>(Map.of("message", "Verifikasi berhasil"), HttpStatus.OK);
     }
 
     @PostMapping("/login")

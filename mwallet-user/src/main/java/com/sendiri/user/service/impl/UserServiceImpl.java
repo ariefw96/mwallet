@@ -46,7 +46,9 @@ public class UserServiceImpl implements UserService {
     public void register(String phoneNo) {
         userRepository.findByPhoneNo(phoneNo)
                 .ifPresent(u -> {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nomor handphone telah terdaftar");
+                    if(u.getIsVerified()){
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nomor handphone telah terdaftar");
+                    }
                 });
         OtpEntity otp = new OtpEntity();
         otp.setType(GenericConstant.OTP_REGISTER);
@@ -54,7 +56,9 @@ public class UserServiceImpl implements UserService {
         otp.setCode(RandomUtil.random6Digit());
         otpRepository.save(otp);
 
-        UserEntity user = new UserEntity();
+        UserEntity user = userRepository.findByPhoneNo(
+                phoneNo
+        ).orElse(new UserEntity());
         user.setPhoneNo(phoneNo);
         userRepository.save(user);
     }
